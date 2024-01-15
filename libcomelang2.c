@@ -1,5 +1,10 @@
 #include "common.h"
+using C 
+{
 #include <libgen.h>
+
+#include <unistd.h>
+}
 //#include <gc.h>
 
 //////////////////////////////
@@ -203,15 +208,12 @@ void xassert(char* msg, bool test)
 //////////////////////////////
 #define HEAP_POOL_PAGE_SIZE 4048
 
-static bool gComeDebugLib = false;
-
-#define DUMMY_SIZE 1024
+void* gComeHeapTop = NULL;
 
 struct sMemHeader
 {
     void* mem;
-    char* caller_sname[COME_STACKFRAME_MAX];
-    int caller_sline[COME_STACKFRAME_MAX];
+    size_t size;
 };
 
 sMemHeader* gMemHeaderTable;
@@ -221,14 +223,14 @@ size_t gNumMemHeaders = 0;
 
 void come_heap_init(int come_malloc, int come_debug)
 {
-    gComeDebugLib = come_debug
-    
     gSizeMemHeaders = 1024;
     
     gMemHeaderTable = calloc(1, sizeof(sMemHeader)*gSizeMemHeaders);
     gNumMemHeaders = 0;
     
     gComeStackFrameBuffer = borrow gc_inc(new buffer());
+    
+    gComeHeapTop = sbrk(0);
 }
 
 void come_heap_final()
@@ -268,7 +270,8 @@ static void come_mem_header_rehash()
                 }
             }
             
-            *it2 = *it;
+            it2->mem = it->mem;
+            it2->size = it->size;
         }
         
         it++;
@@ -311,13 +314,7 @@ static void* come_alloc_mem_from_heap_pool(size_t size, char* sname=null, int sl
     }
     
     it.mem = result;
-    
-    come_push_stackframe(sname, sline);
-    
-    memcpy(it.caller_sname, gComeStackFrameSName, sizeof(char*)*COME_STACKFRAME_MAX);
-    memcpy(it.caller_sline, gComeStackFrameSLine, sizeof(int)*COME_STACKFRAME_MAX);
-    
-    come_pop_stackframe();
+    it.size = size;
     
     gNumMemHeaders++;
     
@@ -350,7 +347,8 @@ static void come_free_mem_of_heap_pool(char* mem)
             }
         }
         
-        memset(it, 0, sizeof(sMemHeader));
+        it->mem = NULL;
+        it->size = 0;
         
         free(mem);
         
@@ -362,6 +360,12 @@ static bool is_valid_object(char* mem)
 {
     if(mem) {
         char* mem2 = mem - sizeof(size_t) - sizeof(size_t);
+        
+        if((void*)mem2 < sbrk(0) && (void*)mem2 >= gComeHeapTop) {
+        }
+        else {
+            return false;
+        }
         
         size_t key = (size_t)mem2 % gSizeMemHeaders;
         
@@ -410,11 +414,10 @@ void come_free_object(void* mem)
     if(mem == NULL) {
         return;
     }
+    
 /*
-    if(gComeMallocLib) {
-        if(!is_valid_object(mem)) {
-            return;
-        }
+    if(!is_valid_object(mem)) {
+        return;
     }
 */
     
@@ -428,13 +431,10 @@ void* come_memdup(void* block, char* sname=null, int sline=0)
     if(!block) {
         return null;
     }
-/*
-    if(gComeMallocLib) {
-        if(!is_valid_object(block)) {
-            return null;
-        }
+    
+    if(!is_valid_object(block)) {
+        return null;
     }
-*/
 
     char* mem = (char*)block - sizeof(size_t) - sizeof(size_t);
     
@@ -454,13 +454,9 @@ void* come_increment_ref_count(void* mem)
     if(mem == NULL) {
         return mem;
     }
-/*
-    if(gComeMallocLib) {
-        if(!is_valid_object(mem)) {
-            return mem;
-        }
+    if(!is_valid_object(mem)) {
+        return mem;
     }
-*/
     
     size_t* ref_count = (size_t*)((char*)mem - sizeof(size_t) - sizeof(size_t));
     
@@ -474,13 +470,6 @@ void* come_print_ref_count(void* mem)
     if(mem == NULL) {
         return mem;
     }
-/*
-    if(gComeMallocLib) {
-        if(!is_valid_object(mem)) {
-            return mem;
-        }
-    }
-*/
     
     size_t* ref_count = (size_t*)((char*)mem - sizeof(size_t) - sizeof(size_t));
     
@@ -494,13 +483,9 @@ void* come_decrement_ref_count(void* mem, void* protocol_fun, void* protocol_obj
     if(mem == NULL) {
         return NULL;
     }
-/*
-    if(gComeMallocLib) {
-        if(!is_valid_object(mem)) {
-            return mem;
-        }
+    if(!is_valid_object(mem)) {
+        return NULL;
     }
-*/
     
     size_t* ref_count = (size_t*)((char*)mem - sizeof(size_t) - sizeof(size_t));
     
@@ -528,7 +513,7 @@ void come_call_finalizer(void* fun, void* mem, void* protocol_fun, void* protoco
     if(mem == NULL) {
         return;
     }
-    if(!is_valid_object(mem) && !call_finalizer_only) {
+    if(!is_valid_object(mem)) {
         return;
     }
     

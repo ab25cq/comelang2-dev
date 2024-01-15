@@ -193,7 +193,6 @@ string append_object_to_right_values(char* obj, sType*% type, sInfo* info)
     
     string buf = xsprintf("void* right_value%d;\n", gRightValueNum-1);
     add_come_code_at_function_head(info, buf);
-    add_come_code_at_function_head2(info, "memset(&right_value%d, 0, sizeof(void*));\n", gRightValueNum-1);
     
     return xsprintf("((%s)(%s=%s))", make_type_name_string(type, false@in_header, true@array_cast_pointer), new_value->mVarName, obj)!;
 }
@@ -405,18 +404,18 @@ void free_object(sType* type, char* obj, bool no_decrement, bool no_free, sInfo*
                     if(c_value) {
                         if(no_decrement) {
                             if(comma) {
-                                add_come_code(info, "(%s && %s != __result_obj__ && !__freed_obj__) ? come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d):0,\n", c_value, c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
+                                add_come_code(info, "(%s && %s != __result_obj__) ? come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d):0,\n", c_value, c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
                             }
                             else {
-                                add_come_code(info, "if(%s && %s != __result_obj__ && !__freed_obj__) { come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d); }\n", c_value, c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
+                                add_come_code(info, "if(%s && %s != __result_obj__) { come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d); }\n", c_value, c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
                             }
                         }
                         else {
                             if(comma) {
-                                add_come_code(info, "(%s && !__freed_obj__) ? come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d):0,\n", c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
+                                add_come_code(info, "(%s) ? come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d):0,\n", c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
                             }
                             else {
-                                add_come_code(info, "if(%s && !__freed_obj__) { come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d); }\n", c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
+                                add_come_code(info, "if(%s) { come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d); }\n", c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
                             }
                         }
                     }
@@ -425,18 +424,18 @@ void free_object(sType* type, char* obj, bool no_decrement, bool no_free, sInfo*
                     if(c_value) {
                         if(no_decrement) {
                             if(comma) {
-                                add_come_code(info, xsprintf("(%s && %s != __result_obj__ && !__freed_obj__) ? come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d):0,\n", c_value, c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
+                                add_come_code(info, xsprintf("(%s && %s != __result_obj__) ? come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d):0,\n", c_value, c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
                             }
                             else {
-                                add_come_code(info, xsprintf("if(%s && %s != __result_obj__ && !__freed_obj__) { come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d); }\n", c_value, c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
+                                add_come_code(info, xsprintf("if(%s && %s != __result_obj__) { come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d); }\n", c_value, c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
                             }
                         }
                         else {
                             if(comma) {
-                                add_come_code(info, xsprintf("(%s && !__freed_obj__) ? come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d):0,\n", c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
+                                add_come_code(info, xsprintf("(%s) ? come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d):0,\n", c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
                             }
                             else {
-                                add_come_code(info, xsprintf("if(%s && !__freed_obj__) { come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d); }\n", c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
+                                add_come_code(info, xsprintf("if(%s) { come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d); }\n", c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
                             }
                         }
                     }
@@ -473,18 +472,18 @@ void free_object(sType* type, char* obj, bool no_decrement, bool no_free, sInfo*
                             string type_name = make_type_name_string(type)!;
                             if(no_decrement) {
                                 if(comma) {
-                                    add_come_code(info, "(%s && %s != __result_obj__ && !__freed_obj__) ? %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d,%d):0,\n", c_value, c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "(%s && %s != __result_obj__) ? %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d,%d):0,\n", c_value, c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
                                 }
                                 else {
-                                    add_come_code(info, "if(%s && %s != __result_obj__ && !__freed_obj__) { %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d); } \n", c_value, c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "if(%s && %s != __result_obj__) { %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d); } \n", c_value, c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
                                 }
                             }
                             else {
                                 if(comma) {
-                                    add_come_code(info, "(%s && !__freed_obj__) ? %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d):0,\n", c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "(%s) ? %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d):0,\n", c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
                                 }
                                 else {
-                                    add_come_code(info, "if(%s && !__freed_obj__) { %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d); } \n", c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "if(%s) { %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d); } \n", c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
                                 }
                             }
                         }
@@ -493,18 +492,18 @@ void free_object(sType* type, char* obj, bool no_decrement, bool no_free, sInfo*
                         if(c_value) {
                             if(no_decrement) {
                                 if(comma) {
-                                    add_come_code(info, "(%s && %s != __result_obj__ && !__freed_obj__) ? %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d):0,\n", c_value, c_value, c_value, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "(%s && %s != __result_obj__) ? %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d):0,\n", c_value, c_value, c_value, c_value, no_decrement, no_free, force_delete_);
                                 }
                                 else {
-                                    add_come_code(info, "if(%s && %s != __result_obj__ && !__freed_obj__) { %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d); }\n", c_value, c_value, c_value, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "if(%s && %s != __result_obj__) { %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d); }\n", c_value, c_value, c_value, c_value, no_decrement, no_free, force_delete_);
                                 }
                             }
                             else {
                                 if(comma) {
-                                    add_come_code(info, "(%s && !__freed_obj__) ? %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d):0,\n", c_value, c_value, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "(%s) ? %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d):0,\n", c_value, c_value, c_value, no_decrement, no_free, force_delete_);
                                 }
                                 else {
-                                    add_come_code(info, "if(%s && !__freed_obj__) { %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d); }\n", c_value, c_value, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "if(%s) { %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d); }\n", c_value, c_value, c_value, no_decrement, no_free, force_delete_);
                                 }
                             }
                         }
@@ -578,18 +577,18 @@ void free_object(sType* type, char* obj, bool no_decrement, bool no_free, sInfo*
                     if(c_value) {
                         if(no_decrement) {
                             if(comma) {
-                                add_come_code(info, "(%s && %s != __result_obj__ && !__freed_obj__) ? come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d):0,\n", c_value, c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
+                                add_come_code(info, "(%s && %s != __result_obj__) ? come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d):0,\n", c_value, c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
                             }
                             else {
-                                add_come_code(info, "if(%s && %s != __result_obj__ && !__freed_obj__) { come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d); }\n", c_value, c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
+                                add_come_code(info, "if(%s && %s != __result_obj__) { come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d); }\n", c_value, c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
                             }
                         }
                         else {
                             if(comma) {
-                                add_come_code(info, "(%s && !__freed_obj__) ? come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d):0,\n", c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
+                                add_come_code(info, "(%s) ? come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d):0,\n", c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
                             }
                             else {
-                                add_come_code(info, "if(%s && !__freed_obj__) { come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d); }\n", c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
+                                add_come_code(info, "if(%s) { come_call_finalizer(%s, %s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d, %d); }\n", c_value, fun_name2, c_value, type_name, c_value, type_name, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_);
                             }
                         }
                     }
@@ -598,18 +597,18 @@ void free_object(sType* type, char* obj, bool no_decrement, bool no_free, sInfo*
                     if(c_value) {
                         if(no_decrement) {
                             if(comma) {
-                                add_come_code(info, xsprintf("(%s && %s != __result_obj__ && !__freed_obj__) ? come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d):0,\n", c_value, c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
+                                add_come_code(info, xsprintf("(%s && %s != __result_obj__) ? come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d):0,\n", c_value, c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
                             }
                             else {
-                                add_come_code(info, xsprintf("if(%s && %s != __result_obj__ && !__freed_obj__) { come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d); }\n", c_value, c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
+                                add_come_code(info, xsprintf("if(%s && %s != __result_obj__) { come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d); }\n", c_value, c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
                             }
                         }
                         else {
                             if(comma) {
-                                add_come_code(info, xsprintf("(%s && !__freed_obj__) ? come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d):0,\n", c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
+                                add_come_code(info, xsprintf("(%s) ? come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d):0,\n", c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
                             }
                             else {
-                                add_come_code(info, xsprintf("if(%s && !__freed_obj__) { come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d); }\n", c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
+                                add_come_code(info, xsprintf("if(%s) { come_call_finalizer(%s,%s, (void*)0, (void*)0, %d, %d, %d, %d); }\n", c_value, fun_name2, c_value, type->mAllocaValue, no_decrement, no_free, force_delete_));
                             }
                         }
                     }
@@ -646,18 +645,18 @@ void free_object(sType* type, char* obj, bool no_decrement, bool no_free, sInfo*
                             string type_name = make_type_name_string(type)!;
                             if(no_decrement) {
                                 if(comma) {
-                                    add_come_code(info, "(%s && %s != __result_obj__ && !__freed_obj__) ? %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d,%d):0,\n", c_value, c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "(%s && %s != __result_obj__) ? %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d,%d):0,\n", c_value, c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
                                 }
                                 else {
-                                    add_come_code(info, "if(%s && %s != __result_obj__ && !__freed_obj__) { %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d); } \n", c_value, c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "if(%s && %s != __result_obj__) { %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d); } \n", c_value, c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
                                 }
                             }
                             else {
                                 if(comma) {
-                                    add_come_code(info, "(%s && !__freed_obj__) ? %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d):0,\n", c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "(%s) ? %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d):0,\n", c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
                                 }
                                 else {
-                                    add_come_code(info, "if(%s && !__freed_obj__) { %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d); } \n", c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "if(%s) { %s = come_decrement_ref_count(%s, ((%s)%s)->finalize, ((%s)%s)->_protocol_obj, %d, %d, %d); } \n", c_value, c_value, c_value, type_name, c_value, type_name, c_value, no_decrement, no_free, force_delete_);
                                 }
                             }
                         }
@@ -666,18 +665,18 @@ void free_object(sType* type, char* obj, bool no_decrement, bool no_free, sInfo*
                         if(c_value) {
                             if(no_decrement) {
                                 if(comma) {
-                                    add_come_code(info, "(%s && %s != __result_obj__ && !__freed_obj__) ? %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d):0,\n", c_value, c_value, c_value, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "(%s && %s != __result_obj__) ? %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d):0,\n", c_value, c_value, c_value, c_value, no_decrement, no_free, force_delete_);
                                 }
                                 else {
-                                    add_come_code(info, "if(%s && %s != __result_obj__ && !__freed_obj__) { %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d); }\n", c_value, c_value, c_value, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "if(%s && %s != __result_obj__) { %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d); }\n", c_value, c_value, c_value, c_value, no_decrement, no_free, force_delete_);
                                 }
                             }
                             else {
                                 if(comma) {
-                                    add_come_code(info, "(%s && !__freed_obj__) ? %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d):0,\n", c_value, c_value, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "(%s) ? %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d):0,\n", c_value, c_value, c_value, no_decrement, no_free, force_delete_);
                                 }
                                 else {
-                                    add_come_code(info, "if(%s && !__freed_obj__) { %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d); }\n", c_value, c_value, c_value, no_decrement, no_free, force_delete_);
+                                    add_come_code(info, "if(%s) { %s = come_decrement_ref_count(%s, (void*)0, (void*)0, %d, %d, %d); }\n", c_value, c_value, c_value, no_decrement, no_free, force_delete_);
                                 }
                             }
                         }
@@ -1004,26 +1003,8 @@ void free_right_value_objects(sInfo* info, bool comma=false)
                 sType*% type = clone it->mType;
                 
                 type = solve_type(type, info->generics_type, info->method_generics_types, info);
-                
-                if(!gComeMalloc) {
-                    if(comma) {
-                        add_come_code(info, "__freed_obj__ = come_is_contained_element(__right_value_freed_obj, %d, %s),\n", n, it->mVarName);
-                    }
-                    else {
-                        add_come_code(info, "__freed_obj__ = come_is_contained_element(__right_value_freed_obj, %d, %s);\n", n, it->mVarName);
-                    }
-                }
 
                 free_object(type, it->mVarName, true@no_decrement, false@no_free, info, comma:comma, force_delete_:false);
-                
-                if(!gComeMalloc) {
-                    if(comma) {
-                        add_come_code(info, "__right_value_freed_obj[%d] = %s, \n", n, it->mVarName);
-                    }
-                    else {
-                        add_come_code(info, "__right_value_freed_obj[%d] = %s;\n", n, it->mVarName);
-                    }
-                }
                 
                 it->mFreed = true;
                 free_right_value = true;
@@ -1031,17 +1012,6 @@ void free_right_value_objects(sInfo* info, bool comma=false)
         }
         
         n++;
-    }
-    
-    if(!gComeMalloc) {
-        if(change_freed_object) {
-            if(comma) {
-                add_come_code(info, "__freed_obj__ = 0, \n");
-            }
-            else {
-                add_come_code(info, "__freed_obj__ = 0;\n");
-            }
-        }
     }
 }
 

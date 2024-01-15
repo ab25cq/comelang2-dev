@@ -9,12 +9,6 @@ using C
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-
-#ifdef __DARWIN_ARM__
-#include <malloc/malloc.h>
-#else
-#include <malloc.h>
-#endif
 }
 
 typedef void* any;
